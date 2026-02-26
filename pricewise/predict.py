@@ -28,12 +28,15 @@ def _load():
 def predict_one(features: dict) -> float:
     """Predict the sale price ($) for a single house given a dict of features."""
     model, expected = _load()
-    # Reindex to the training columns so order matches and missing fields → NaN.
-    row = pd.DataFrame([features]).reindex(columns=expected)
+    # Drop None (unset) fields, then reindex to the training columns so order
+    # matches and any missing field becomes NaN for the pipeline to impute.
+    clean = {k: v for k, v in features.items() if v is not None}
+    row = pd.DataFrame([clean]).reindex(columns=expected)
     return float(model.predict(row)[0])
 
 
 def predict_many(rows: list[dict]) -> list[float]:
     model, expected = _load()
-    frame = pd.DataFrame(rows).reindex(columns=expected)
+    clean = [{k: v for k, v in r.items() if v is not None} for r in rows]
+    frame = pd.DataFrame(clean).reindex(columns=expected)
     return [float(p) for p in model.predict(frame)]
