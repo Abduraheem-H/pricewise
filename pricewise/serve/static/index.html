@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PriceWise — House Price Estimator</title>
+    <style>
+      :root {
+        --bg: #0f172a; --panel: #1e293b; --panel2: #0b1220;
+        --border: #334155; --text: #e2e8f0; --muted: #94a3b8;
+        --accent1: #6366f1; --accent2: #d946ef; --ok: #34d399;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0; background: radial-gradient(1200px 600px at 70% -10%, #1e1b4b 0%, var(--bg) 55%);
+        color: var(--text); font: 15px/1.5 system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        min-height: 100vh;
+      }
+      .wrap { max-width: 920px; margin: 0 auto; padding: 32px 20px 64px; }
+      header { display: flex; align-items: center; gap: 14px; margin-bottom: 8px; }
+      .logo {
+        width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center;
+        font-size: 24px; background: linear-gradient(135deg, var(--accent1), var(--accent2));
+        box-shadow: 0 8px 24px -8px var(--accent1);
+      }
+      h1 { font-size: 22px; margin: 0; }
+      .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+      .card {
+        background: var(--panel); border: 1px solid var(--border);
+        border-radius: 18px; padding: 22px; margin-top: 22px;
+      }
+      .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; }
+      label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+      input, select {
+        width: 100%; padding: 9px 11px; border-radius: 10px; background: var(--panel2);
+        border: 1px solid var(--border); color: var(--text); font-size: 14px; outline: none;
+      }
+      input:focus, select:focus { border-color: var(--accent1); }
+      .actions { display: flex; gap: 10px; align-items: center; margin-top: 20px; flex-wrap: wrap; }
+      button {
+        border: 0; border-radius: 11px; padding: 11px 20px; font-size: 14px; font-weight: 600;
+        cursor: pointer; color: white; background: linear-gradient(90deg, var(--accent1), var(--accent2));
+        transition: filter .15s;
+      }
+      button:hover { filter: brightness(1.1); }
+      button:disabled { opacity: .5; cursor: default; }
+      button.ghost { background: transparent; border: 1px solid var(--border); color: var(--text); }
+      .result {
+        margin-top: 22px; padding: 22px; border-radius: 16px; text-align: center;
+        background: linear-gradient(135deg, rgba(99,102,241,.15), rgba(217,70,239,.12));
+        border: 1px solid var(--border); display: none;
+      }
+      .result.show { display: block; }
+      .price { font-size: 40px; font-weight: 800; letter-spacing: -1px; }
+      .price small { font-size: 15px; color: var(--muted); font-weight: 500; }
+      .note { color: var(--muted); font-size: 12px; margin-top: 6px; }
+      .err { color: #fda4af; }
+      footer { color: var(--muted); font-size: 12px; margin-top: 26px; text-align: center; }
+      a { color: #a5b4fc; }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <div class="logo">🏠</div>
+        <div>
+          <h1>PriceWise</h1>
+          <div class="sub">Estimate a home's sale price — powered by a trained gradient-boosting model.</div>
+        </div>
+      </header>
+
+      <div class="card">
+        <div class="grid">
+          <div><label>Overall quality (1–10)</label><input data-col="OverallQual" type="number" min="1" max="10" placeholder="7" /></div>
+          <div><label>Overall condition (1–10)</label><input data-col="OverallCond" type="number" min="1" max="10" placeholder="5" /></div>
+          <div><label>Living area (sq ft)</label><input data-col="GrLivArea" type="number" min="0" placeholder="1700" /></div>
+          <div><label>1st floor (sq ft)</label><input data-col="1stFlrSF" type="number" min="0" placeholder="1100" /></div>
+          <div><label>2nd floor (sq ft)</label><input data-col="2ndFlrSF" type="number" min="0" placeholder="600" /></div>
+          <div><label>Total basement (sq ft)</label><input data-col="TotalBsmtSF" type="number" min="0" placeholder="1000" /></div>
+          <div><label>Lot area (sq ft)</label><input data-col="LotArea" type="number" min="0" placeholder="9000" /></div>
+          <div><label>Year built</label><input data-col="YearBuilt" type="number" min="1800" max="2100" placeholder="2003" /></div>
+          <div><label>Year remodeled</label><input data-col="YearRemodAdd" type="number" min="1800" max="2100" placeholder="2004" /></div>
+          <div><label>Full baths</label><input data-col="FullBath" type="number" min="0" placeholder="2" /></div>
+          <div><label>Half baths</label><input data-col="HalfBath" type="number" min="0" placeholder="1" /></div>
+          <div><label>Bedrooms</label><input data-col="BedroomAbvGr" type="number" min="0" placeholder="3" /></div>
+          <div><label>Rooms above grade</label><input data-col="TotRmsAbvGrd" type="number" min="0" placeholder="7" /></div>
+          <div><label>Garage cars</label><input data-col="GarageCars" type="number" min="0" placeholder="2" /></div>
+          <div><label>Garage area (sq ft)</label><input data-col="GarageArea" type="number" min="0" placeholder="480" /></div>
+          <div><label>Fireplaces</label><input data-col="Fireplaces" type="number" min="0" placeholder="1" /></div>
+          <div><label>Year sold</label><input data-col="YrSold" type="number" min="1900" max="2100" placeholder="2008" /></div>
+          <div>
+            <label>Neighborhood</label>
+            <select data-col="Neighborhood">
+              <option value="">—</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="predict">Estimate price</button>
+          <button id="example" class="ghost" type="button">Fill example</button>
+          <button id="clear" class="ghost" type="button">Clear</button>
+        </div>
+
+        <div class="result" id="result">
+          <div class="price" id="price">—</div>
+          <div class="note" id="note"></div>
+        </div>
+      </div>
+
+      <footer id="footer">Loading model info…</footer>
+    </div>
+
+    <script>
+      // When the page is served by the API (port 8000) use its origin; if it's
+      // opened standalone (file:// or a preview panel on another port), fall back
+      // to the default local API. CORS on the server allows the cross-origin call.
+      const API_BASE = window.PRICEWISE_API || (location.port === "8000" ? location.origin : "http://127.0.0.1:8000");
+
+      const NEIGHBORHOODS = ["Blmngtn","Blueste","BrDale","BrkSide","ClearCr","CollgCr","Crawfor","Edwards","Gilbert","IDOTRR","MeadowV","Mitchel","NAmes","NoRidge","NPkVill","NridgHt","NWAmes","OldTown","SWISU","Sawyer","SawyerW","Somerst","StoneBr","Timber","Veenker"];
+      const EXAMPLE = { OverallQual:8, OverallCond:5, GrLivArea:2200, "1stFlrSF":1200, "2ndFlrSF":1000, TotalBsmtSF:1150, LotArea:11000, YearBuilt:2006, YearRemodAdd:2007, FullBath:2, HalfBath:1, BedroomAbvGr:4, TotRmsAbvGrd:9, GarageCars:3, GarageArea:640, Fireplaces:1, YrSold:2008, Neighborhood:"NridgHt" };
+
+      const sel = document.querySelector('[data-col="Neighborhood"]');
+      NEIGHBORHOODS.forEach((n) => { const o = document.createElement("option"); o.value = n; o.textContent = n; sel.appendChild(o); });
+
+      const fields = () => document.querySelectorAll("[data-col]");
+      const fmt = (n) => "$" + Math.round(n).toLocaleString("en-US");
+
+      function collect() {
+        const payload = {};
+        fields().forEach((el) => {
+          const v = el.value.trim();
+          if (v === "") return;
+          payload[el.dataset.col] = el.type === "number" ? Number(v) : v;
+        });
+        return payload;
+      }
+
+      document.getElementById("example").onclick = () => {
+        fields().forEach((el) => { if (el.dataset.col in EXAMPLE) el.value = EXAMPLE[el.dataset.col]; });
+      };
+      document.getElementById("clear").onclick = () => {
+        fields().forEach((el) => (el.value = ""));
+        document.getElementById("result").classList.remove("show");
+      };
+
+      document.getElementById("predict").onclick = async () => {
+        const btn = document.getElementById("predict");
+        const result = document.getElementById("result");
+        const price = document.getElementById("price");
+        const note = document.getElementById("note");
+        const payload = collect();
+        if (Object.keys(payload).length === 0) {
+          result.classList.add("show");
+          price.textContent = "—";
+          note.innerHTML = '<span class="err">Enter at least a few fields (try “Fill example”).</span>';
+          return;
+        }
+        btn.disabled = true; btn.textContent = "Estimating…";
+        try {
+          const res = await fetch(API_BASE + "/predict", {
+            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+          });
+          const data = await res.json();
+          result.classList.add("show");
+          if (!res.ok) {
+            price.textContent = "—";
+            note.innerHTML = '<span class="err">' + (data.detail || "Prediction failed") + "</span>";
+          } else {
+            price.innerHTML = fmt(data.predicted_price) + ' <small>estimated sale price</small>';
+            note.textContent = "Model: " + data.model_name + " · the more fields you fill, the sharper the estimate.";
+          }
+        } catch (e) {
+          result.classList.add("show");
+          price.textContent = "—";
+          note.innerHTML = '<span class="err">Could not reach the API.</span>';
+        } finally {
+          btn.disabled = false; btn.textContent = "Estimate price";
+        }
+      };
+
+      // Footer: show which model + its test metrics.
+      fetch(API_BASE + "/meta").then((r) => r.json()).then((m) => {
+        const md = m.metadata || {}, mx = m.metrics || {};
+        const bits = [];
+        if (md.best_model) bits.push("Model: " + md.best_model);
+        if (mx.r2 != null) bits.push("Test R² " + mx.r2.toFixed(3));
+        if (mx.mae != null) bits.push("MAE " + fmt(mx.mae));
+        document.getElementById("footer").textContent = bits.join("  ·  ") || "PriceWise";
+      }).catch(() => { document.getElementById("footer").textContent = "PriceWise"; });
+    </script>
+  </body>
+</html>

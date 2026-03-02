@@ -3,13 +3,14 @@
 
 PY := python
 
-.PHONY: help setup train evaluate all test clean
+.PHONY: help setup train evaluate all serve test clean
 
 help:
 	@echo "setup     - create .venv and install dependencies"
 	@echo "train     - train models, select the best, save the artifact"
 	@echo "evaluate  - score the saved model on the test set + write plots"
 	@echo "all       - train then evaluate"
+	@echo "serve     - run the prediction API + web form (http://localhost:8000)"
 	@echo "test      - run unit tests"
 	@echo "clean     - remove generated artifacts (keeps cached dataset)"
 
@@ -25,6 +26,9 @@ evaluate:
 	$(PY) -m pricewise.evaluate
 
 all: train evaluate
+
+serve:
+	$(PY) -m pricewise.serve
 
 test:
 	$(PY) -m pytest -q
