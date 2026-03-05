@@ -1,0 +1,16 @@
+# Keep the build context small and force a fresh train inside the image.
+.venv/
+venv/
+data/
+models/
+reports/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.ipynb_checkpoints/
+.git/
+.github/
+tests/
+*.md
+.gitignore
+.pre-commit-config.yaml
