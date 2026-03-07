@@ -8,8 +8,9 @@ this project owns the full loop: data → features → train → evaluate.
 > **Held-out test performance:** **R² = 0.91**, **MAE ≈ $15,000**, **MAPE 8.7%**
 > — i.e. predictions land within ~9% of the true sale price on average.
 
-Built to be **modular**: Phase 1 (this repo) is the model. Phase 2 adds a serving
-API + UI on top of the saved artifact via `pricewise.predict` — no retraining.
+Built to be **modular**: **Phase 1** trains + evaluates the model; **Phase 2**
+serves it via a **FastAPI** `/predict` endpoint and a web form — both on top of
+the saved artifact via `pricewise.predict`, no retraining.
 
 ---
 
@@ -85,10 +86,14 @@ pricewise/
 │   ├── data.py        # download/cache Ames, train/test split
 │   ├── features.py    # ColumnTransformer preprocessing (dtype-driven)
 │   ├── model.py       # candidate models to compare
-│   ├── train.py       # CV compare → pick best → refit → save
+│   ├── train.py       # tune + CV compare → pick best → refit → save
 │   ├── evaluate.py    # test metrics + diagnostic plots
-│   └── predict.py     # load model + predict (the Phase-2 serving seam)
-├── tests/             # network-free smoke tests
+│   ├── predict.py     # load model + predict (the serving seam)
+│   └── serve/         # Phase 2: FastAPI app + web form
+│       ├── app.py     # /predict, /health, /meta + serves the form
+│       ├── schemas.py # typed request/response models
+│       └── static/index.html
+├── tests/             # network-free smoke + API tests
 ├── data/  models/  reports/   # artifacts (gitignored)
 ├── requirements.txt
 └── Makefile
@@ -131,13 +136,37 @@ predict_one({"OverallQual": 8, "GrLivArea": 2200, "GarageCars": 2,
 
 ---
 
-## 🔜 Phase 2 — serving (next)
+## 🌐 Serving (Phase 2)
 
-The trained pipeline (`models/model.joblib`) is the only thing serving needs:
+A **FastAPI** app loads `models/model.joblib` and exposes a JSON API plus a
+single-page web form (no separate frontend needed).
 
-- A **FastAPI** `/predict` endpoint wrapping `pricewise.predict.predict_one`.
-- A small **web form** to enter a few features and get an instant estimate.
-- Containerization + CI, mirroring the setup used in the companion Pensieve repo.
+```bash
+python -m pricewise.serve        # -> http://127.0.0.1:8000   (or: make serve)
+```
+
+Open <http://127.0.0.1:8000> for the form, or call the API directly:
+
+```bash
+curl -X POST http://127.0.0.1:8000/predict -H "Content-Type: application/json" \
+  -d '{"OverallQual": 8, "GrLivArea": 2200, "GarageCars": 3,
+       "YearBuilt": 2006, "Neighborhood": "NridgHt"}'
+# {"predicted_price": 250792.09, "currency": "USD", "model_name": "xgboost"}
+```
+
+| Method | Path | Description |
+| ------ | ---- | ----------- |
+| `GET`  | `/` | Web form UI |
+| `GET`  | `/health` | Liveness + whether a model is loaded |
+| `GET`  | `/meta` | Best model, params, and test metrics |
+| `POST` | `/predict` | Predict a sale price from house features |
+| `GET`  | `/docs` | Interactive OpenAPI docs (auto-generated) |
+
+Only the high-signal fields are required — the model imputes the rest, and the
+more you supply, the sharper the estimate. Train the model first (`make all`) so
+`models/model.joblib` exists.
+
+> **Next (optional):** containerize + add CI, mirroring the companion Pensieve repo.
 
 ---
 
