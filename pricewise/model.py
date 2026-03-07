@@ -11,7 +11,7 @@ Param keys are prefixed `regressor__model__` because each estimator sits as the
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
 
 from sklearn.dummy import DummyRegressor
