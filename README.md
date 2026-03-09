@@ -95,7 +95,10 @@ pricewise/
 │       └── static/index.html
 ├── tests/             # network-free smoke + API tests
 ├── data/  models/  reports/   # artifacts (gitignored)
-├── requirements.txt
+├── Dockerfile  docker-compose.yml   # containerized train + serve
+├── .github/workflows/ci.yml         # lint + test + image build
+├── ruff.toml  .pre-commit-config.yaml
+├── requirements.txt   requirements-serve.txt
 └── Makefile
 ```
 
@@ -166,7 +169,23 @@ Only the high-signal fields are required — the model imputes the rest, and the
 more you supply, the sharper the estimate. Train the model first (`make all`) so
 `models/model.joblib` exists.
 
-> **Next (optional):** containerize + add CI, mirroring the companion Pensieve repo.
+---
+
+## 🐳 Docker & CI
+
+Run the whole thing in one container — the image **trains the model at build
+time**, so it's fully self-contained and serves immediately:
+
+```bash
+docker compose up --build        # -> http://localhost:8000   (or: make docker-up)
+```
+
+| Tool | What it does |
+| ---- | ------------ |
+| **Docker** | `Dockerfile` + `docker-compose.yml` — installs deps, trains, and serves. |
+| **CI (GitHub Actions)** | `.github/workflows/ci.yml` — ruff lint + pytest, then a Docker image build to prove it's deployable. |
+| **Ruff** | `make lint` / `ruff check .` — fast linting (`ruff.toml`). |
+| **pre-commit** | `pip install pre-commit && pre-commit install` — runs ruff (lint + format) + hygiene on every commit. |
 
 ---
 
