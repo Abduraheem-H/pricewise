@@ -1,0 +1,5 @@
+# Conservative lint: catch real errors (pyflakes F + syntax E9), not style nits.
+line-length = 100
+
+[lint]
+select = ["E9", "F"]

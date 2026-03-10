@@ -3,16 +3,20 @@
 
 PY := python
 
-.PHONY: help setup train evaluate all serve test clean
+.PHONY: help setup train evaluate all serve test lint docker-build docker-up docker-down clean
 
 help:
-	@echo "setup     - create .venv and install dependencies"
-	@echo "train     - train models, select the best, save the artifact"
-	@echo "evaluate  - score the saved model on the test set + write plots"
-	@echo "all       - train then evaluate"
-	@echo "serve     - run the prediction API + web form (http://localhost:8000)"
-	@echo "test      - run unit tests"
-	@echo "clean     - remove generated artifacts (keeps cached dataset)"
+	@echo "setup        - create .venv and install dependencies"
+	@echo "train        - train models, select the best, save the artifact"
+	@echo "evaluate     - score the saved model on the test set + write plots"
+	@echo "all          - train then evaluate"
+	@echo "serve        - run the prediction API + web form (http://localhost:8000)"
+	@echo "test         - run unit tests"
+	@echo "lint         - ruff lint"
+	@echo "docker-build - build the Docker image (trains during build)"
+	@echo "docker-up    - docker compose up --build"
+	@echo "docker-down  - docker compose down"
+	@echo "clean        - remove generated artifacts (keeps cached dataset)"
 
 setup:
 	$(PY) -m venv .venv
@@ -32,6 +36,18 @@ serve:
 
 test:
 	$(PY) -m pytest -q
+
+lint:
+	$(PY) -m ruff check .
+
+docker-build:
+	docker build -t pricewise .
+
+docker-up:
+	docker compose up --build
+
+docker-down:
+	docker compose down
 
 clean:
 	rm -rf models reports/*.png reports/metrics.json
