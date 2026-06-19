@@ -19,6 +19,8 @@ jobs:
   test:
     name: Lint + test
     runs-on: ubuntu-latest
+    env:
+      PYTHONPATH: ${{ github.workspace }}
     steps:
       - uses: actions/checkout@v4
 
@@ -31,12 +33,12 @@ jobs:
         run: pip install -r requirements.txt
 
       - name: Lint (ruff)
-        run: ruff check .
+        run: python -m ruff check .
 
       - name: Tests
         # The /predict tests skip when no model artifact is present (CI has none),
         # so the suite stays green without training.
-        run: pytest -q
+        run: python -m pytest -q
 
   docker:
     name: Docker image build
